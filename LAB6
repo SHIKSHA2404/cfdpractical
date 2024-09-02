@@ -1,0 +1,112 @@
+#include <iostream>
+using namespace std;
+
+#define N 5    // Number of spatial points
+#define M 5    // Number of time steps
+
+// Function to compute the initial condition
+double initialCondition(double x) {
+    return 10 * x * (5 - x);
+}
+
+// Function to solve the tridiagonal system
+void tridiagonal(double r, double d[], double x[]) {
+    double a = -r / 2;
+    double b = 1 + r;
+    double c = -r / 2;
+
+    double alpha[N + 1];
+    double beta[N + 1];
+
+    alpha[1] = b;
+    beta[1] = d[1] / b;
+
+    for (int i = 2; i < N; ++i) {
+        alpha[i] = b - (a * c / alpha[i - 1]);
+        beta[i] = (d[i] - a * beta[i - 1]) / alpha[i];
+    }
+
+    x[N - 1] = beta[N - 1];
+
+    for (int i = N - 2; i >= 1; --i) {
+        x[i] = beta[i] - (c * x[i + 1]) / alpha[i];
+    }
+}
+
+int main() {
+    double h = 1.0; // Spatial step size
+    double k = 0.1; // Time step size
+    double a1;      // Parameter affecting stability
+    double us, ue;  // Boundary conditions
+
+    cout << "Enter the value of a: ";
+    cin >> a1;
+
+    double r = a1 * k / (h * h);
+
+    cout << "Enter the value of u[0,t]: ";
+    cin >> us;
+
+    cout << "Enter the value of u[5,t]: ";
+    cin >> ue;
+
+    cout << "The value of r is " << r << "\n";
+
+    // Initialize the grid
+    double u[N + 1][M + 1] = {0.0};
+
+    // Set boundary conditions
+    for (int j = 0; j <= M; ++j) {
+        u[0][j] = us;
+        u[N][j] = ue;
+    }
+
+    // Set initial conditions
+    for (int i = 1; i < N; ++i) {
+        u[i][0] = initialCondition(i * h);
+    }
+
+    // Time-stepping loop
+    for (int j = 0; j < M; ++j) {
+        double d[N + 1] = {0.0};
+        double newU[N + 1] = {0.0};
+
+        // Compute the right-hand side vector d
+        for (int i = 1; i < N; ++i) {
+            d[i] = (r / 2) * u[i + 1][j] + (1 - r) * u[i][j] + (r / 2) * u[i - 1][j];
+        }
+
+        // Solve the tridiagonal system
+        tridiagonal(r, d, newU);
+
+        // Update the grid with new values
+        for (int i = 1; i < N; ++i) {
+            u[i][j + 1] = newU[i];
+        }
+    }
+
+    // Output the result
+    for (int j = 0; j <= M; ++j) {
+        for (int i = 0; i <= N; ++i) {
+            cout << u[i][j] << " ";
+        }
+        cout << endl;
+    }
+
+    return 0;
+}
+------------------OUTPUT---------------------------
+
+Enter the value of a: 1
+Enter the value of u[0,t]: 0
+Enter the value of u[5,t]: 0
+The value of r is 0.1
+0 40 60 60 40 0 
+0 38.0911 58.0043 58.0043 38.0911 0 
+0 36.3486 56.0249 56.0249 36.3486 0 
+0 34.7443 54.0745 54.0745 34.7443 0 
+0 33.2561 52.1627 52.1627 33.2561 0 
+0 31.8667 50.2959 50.2959 31.8667 0 
+
+
+=== Code Execution Successful ===
